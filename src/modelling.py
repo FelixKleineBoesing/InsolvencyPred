@@ -4,7 +4,9 @@ import numpy as np
 import xgboost as xgb
 
 from sklearn.linear_model import LogisticRegression as LR
-from typing import Union
+from typing import Union, List
+
+from src.preprocessing import Preprocessor
 
 
 class Model(abc.ABC):
@@ -90,7 +92,17 @@ class CrossValidation:
     def __init__(self, folds: int = 5):
         self.folds = folds
 
-    def run(self, data: pd.DataFrame, label: Union[pd.Series, list], model: Model):
+    def run(self, data: pd.DataFrame, label: Union[pd.Series, list], model: Model,
+            preprocessing: List[Preprocessor] = None):
+        """
+
+        :param data:
+        :param label:
+        :param model: instance of class Model
+        :param preprocessing: can be a list of functions that take the training and test data and labels,
+            mutate and return it afterwards
+        :return:
+        """
         indices = np.arange(data.shape[0])
         np.random.shuffle(indices)
         test_indices = np.array_split(indices, self.folds)
@@ -119,4 +131,4 @@ if __name__ == "__main__":
     lr_model.train(data, label)
     print(lr_model.predict(test_data))
 
-    cv = CrossValidation(5).run(data, label, LogisticRegression())
+    cv = CrossValidation(5).run(data, label, LogisticRegression(), preprocessing=[])

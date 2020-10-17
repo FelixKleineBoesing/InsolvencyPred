@@ -1,3 +1,4 @@
+import abc
 import numpy as np
 import pandas as pd
 
@@ -79,6 +80,33 @@ def _get_iqr(values):
     lq, uq = np.nanpercentile(values, [25, 75])
     iqr = uq - lq
     return lq, uq, iqr
+
+
+class Preprocessor(abc.ABC):
+
+    @abc.abstractmethod
+    def process(self, train_data, test_data, train_label) -> (pd.DataFrame, pd.DataFrame):
+        """
+        This method may mutate the train and test data and return them afterwards
+
+        :param train_data:
+        :param test_data:
+        :param train_label:
+        :return: a tuple that contains the train and test dataframes
+        """
+        pass
+
+
+class MeanReplacement(Preprocessor):
+
+    def process(self, train_data, test_data, train_label) -> (pd.DataFrame, pd.DataFrame):
+        pass
+
+
+class Standardizer(Preprocessor):
+
+    def process(self, train_data, test_data, train_label) -> (pd.DataFrame, pd.DataFrame):
+        pass
 
 
 if __name__ == "__main__":
