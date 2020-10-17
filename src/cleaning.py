@@ -18,13 +18,10 @@ def load_arff_files(dir: str = "data/raw_data/",
     arrf_data = [arff.loadarff(file) for file in files]
     dataframes = [pd.DataFrame(data[0]) for data in arrf_data]
     for frame in dataframes:
+        frame["class"] = frame["class"].astype(int)
         frame.rename(column_names, axis=1, inplace=True)
 
     return dataframes, files
-
-
-def clean_insolvency_data(df: pd.DataFrame):
-    df["class"] = df["class"].astype(int)
 
 
 def _get_column_name_mapping(file_path: str):
@@ -40,4 +37,3 @@ def _get_column_name_mapping(file_path: str):
 
 if __name__ == "__main__":
     frames, file_names = load_arff_files("../data/raw_data/")
-    clean_insolvency_data(frames[0])
