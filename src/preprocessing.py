@@ -100,13 +100,22 @@ class Preprocessor(abc.ABC):
 class MeanReplacement(Preprocessor):
 
     def process(self, train_data, test_data, train_label) -> (pd.DataFrame, pd.DataFrame):
-        pass
+        for col in train_data.columns:
+            mean_train = np.nanmean(train_data[col])
+            train_data.loc[train_data[col].isnull(), col] = mean_train
+            test_data.loc[test_data[col].isnull(), col] = mean_train
+        return train_data, test_data
 
 
 class Standardizer(Preprocessor):
 
     def process(self, train_data, test_data, train_label) -> (pd.DataFrame, pd.DataFrame):
-        pass
+        mean_train = np.nanmean(train_data, axis=1)
+        sd_train = np.nanstd(train_data, axis=1)
+
+        train_data = (train_data - mean_train) / sd_train
+        test_data = (test_data - mean_train) / sd_train
+        return train_data, test_data
 
 
 if __name__ == "__main__":

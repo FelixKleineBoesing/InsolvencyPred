@@ -93,13 +93,13 @@ class CrossValidation:
         self.folds = folds
 
     def run(self, data: pd.DataFrame, label: Union[pd.Series, list], model: Model,
-            preprocessing: List[Preprocessor] = None):
+            preprocessors: List[Preprocessor] = None):
         """
 
         :param data:
         :param label:
         :param model: instance of class Model
-        :param preprocessing: can be a list of functions that take the training and test data and labels,
+        :param preprocessors: can be a list of preprocessors that take the training and test data and labels,
             mutate and return it afterwards
         :return:
         """
@@ -112,6 +112,10 @@ class CrossValidation:
             train_data, test_data = data.iloc[~data.index.isin(test_indices[i]), :], data.iloc[test_indices[i], :]
             train_label, test_label = [v for i, v in enumerate(label) if i not in test_indices[i]], \
                                       [v for i, v in enumerate(label) if i in test_indices[i]]
+            if preprocessors is not None:
+                for preprocessor in preprocessors:
+                    train_data, test_data = preprocessor.process(train_data=train_data, test_data=test_data,
+                                                                 train_label=train_label)
             model.train(train_data=train_data, label=train_label)
             predictions[test_indices[i]] = model.predict(test_data)
         return predictions
@@ -121,14 +125,14 @@ if __name__ == "__main__":
     model = XGBoostModel()
     data = pd.DataFrame({"a": [1, 2, 3], "b": [7, 5, 2]})
     label = [0, 1, 1]
-    test_data = pd.DataFrame({"a": [4], "b": [1]})
-    test_label = [1]
+    tdata = pd.DataFrame({"a": [4], "b": [1]})
+    tlabel = [1]
 
     model.train(data, label)
-    print(model.predict(test_data))
+    print(model.predict(tdata))
 
     lr_model = LogisticRegression()
     lr_model.train(data, label)
-    print(lr_model.predict(test_data))
+    print(lr_model.predict(tdata))
 
-    cv = CrossValidation(5).run(data, label, LogisticRegression(), preprocessing=[])
+    cv = CrossValidation(5).run(data, label, LogisticRegression(), preprocessors=None)
