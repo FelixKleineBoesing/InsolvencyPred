@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def replace_missing_values_mean():
@@ -9,12 +10,42 @@ def replace_missing_values_mice():
     pass
 
 
-def up_sampling():
-    pass
+def _sampling(data, method: str = "up"):
+    """
+
+    :param data:
+    :return:
+    """
+    assert method in ["up", "down"]
+    if method == "up":
+        factor = -1
+    else:
+        factor = 1
+    class_neg = data.loc[data["class"] == 0, :]
+    class_pos = data.loc[data["class"] == 1, :]
+
+    count_neg = class_neg.shape[0]
+    count_pos = class_pos.shape[0]
+    args = {}
+    if factor * count_neg < factor * count_pos:
+        if count_neg > count_pos:
+            args["replace"] = True
+        down_sampled_df = class_pos.sample(count_neg, **args)
+        sampled_data = pd.concat((down_sampled_df, class_neg))
+    else:
+        if count_pos > count_neg:
+            args["replace"] = True
+        down_sampled_df = class_neg.sample(count_pos, replace=True)
+        sampled_data = pd.concat((down_sampled_df, class_pos))
+    return sampled_data
 
 
-def down_sampling():
-    pass
+def up_sampling(data):
+    return _sampling(data, "up")
+
+
+def down_sampling(data: pd.DataFrame):
+    return _sampling(data, "down")
 
 
 def remove_outliers(values, iqr_factor: float = 2.5):
@@ -57,3 +88,7 @@ if __name__ == "__main__":
     clipped_values = remove_outliers(values, 1.5)
     print(min(clipped_values))
     print(max(clipped_values))
+
+    data = pd.DataFrame({"class": [1, 1, 0, 1]})
+    upsampled_data = up_sampling(data)
+    downsampled_data = down_sampling(data)
