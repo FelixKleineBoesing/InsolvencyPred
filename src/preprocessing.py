@@ -2,12 +2,11 @@ import numpy as np
 import pandas as pd
 
 
-def replace_missing_values_mean():
-    pass
-
-
-def replace_missing_values_mice():
-    pass
+def replace_missing_values_mean(data: pd.DataFrame):
+    data = data.copy()
+    for col in data.columns:
+        data[col] = (data[col] - np.nanmean(data[col])) / np.nanstd(data[col])
+    return data
 
 
 def _sampling(data, method: str = "up"):

@@ -8,7 +8,7 @@ This project is build with python 3.7. Click [here](https://www.python.org/downl
 git clone https://github.com/FelixKleineBoesing/AccentureApplication.git
 cd AccentureApplication
 pip3 install -r reqirements.txt
-jupyter server
+jupyter notebook
 ```
 
 ### Introduction
