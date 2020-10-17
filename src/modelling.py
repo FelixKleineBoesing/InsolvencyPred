@@ -60,6 +60,18 @@ class XGBoostModel(Model):
         return self._model.predict(test_matrix)
 
 
+class LogisticRegression(Model):
+
+    def __init__(self):
+        pass
+
+    def train(self, train_data: pd.DataFrame, label: Union[list, pd.Series]):
+        pass
+
+    def predict(self, test_data: pd.DataFrame):
+        pass
+
+
 if __name__ == "__main__":
     model = XGBoostModel()
     data = pd.DataFrame({"a": [1, 2, 3], "b": [7, 5, 2]})
