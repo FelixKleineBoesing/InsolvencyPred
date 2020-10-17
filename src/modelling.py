@@ -17,7 +17,6 @@ class Model(abc.ABC):
     def train(self, train_data: pd.DataFrame, label: Union[list, pd.Series]):
         pass
 
-
     def predict(self, test_data: pd.DataFrame):
         assert self._model is not None, "Model must be trained first!"
         return self._predict(test_data)
@@ -25,6 +24,7 @@ class Model(abc.ABC):
     @abc.abstractmethod
     def _predict(self, test_data: pd.DataFrame):
         pass
+
 
 class XGBoostModel(Model):
 
