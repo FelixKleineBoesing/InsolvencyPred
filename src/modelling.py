@@ -108,10 +108,11 @@ class CrossValidation:
         indices = np.arange(data.shape[0])
         np.random.shuffle(indices)
         test_indices = np.array_split(indices, self.folds)
-
+        test_indices = [sorted(l) for l in test_indices]
         predictions = np.array([np.NaN for _ in range(len(indices))])
         for i in range(self.folds):
-            train_data, test_data = data.loc[~data.index.isin(test_indices[i]), :], data.iloc[test_indices[i], :]
+            train_data, test_data = data.iloc[[k for k in range(data.shape[0]) if k not in test_indices[i]], :], \
+                                    data.iloc[test_indices[i], :]
             train_label, test_label = [v for j, v in enumerate(label) if j not in test_indices[i]], \
                                       [v for j, v in enumerate(label) if j in test_indices[i]]
             if preprocessors is not None:
@@ -119,6 +120,7 @@ class CrossValidation:
                     train_data, test_data, train_label = preprocessor.process(train_data=train_data,
                                                                               test_data=test_data,
                                                                               train_label=train_label)
+            print("Label Distribution: Train: {}, Test: {}".format(np.mean(train_label), np.mean(test_label)))
             model.train(train_data=train_data, label=train_label)
             predictions[test_indices[i]] = model.predict(test_data)
         return predictions

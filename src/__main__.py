@@ -20,10 +20,10 @@ def main():
         label = df.pop("class")
         # this is to kick only to kick most extreme outlier
         df = clip_outliers(df.copy(), 5.5)
-        model = LogisticRegression(max_iter=100)
-        probs_lr.append(cv.run(data=df, label=label, model=model,
-                               preprocessors=[MeanReplacement(), Standardizer(), PCA(0.9)])) #
-
+        model = LogisticRegression(max_iter=1000)
+        probs = cv.run(data=df, label=label, model=model,
+                       preprocessors=[MeanReplacement(), Standardizer(), ReSampler("down")])
+        probs_lr.append(probs) #
         preds = [1 if p > 0.5 else 0 for p in probs_lr[i]]
         print("F1, Baseline: {}, LogisticRegression: {}".format(get_f1_score(np.random.choice([0, 1], size=len(label)), label),
                                                                 get_f1_score(preds, label)))
@@ -37,11 +37,10 @@ def main():
         print("#####   {} Year   ####".format(i + 1))
         df = df.copy()
         label = df.pop("class")
-        # this is to kick only to kick most extreme outlier
-        #df = clip_outliers(df.copy(), 5.5)
-        model = XGBoost(val_share=0.2, n_rounds=20, lambda_=0,
-                        additional_booster_params={"params": {"max_depth": 4}})
-        probs_xgb.append(cv.run(data=df, label=label, model=model, preprocessors=[MeanReplacement(), PCA(0.9)]))
+        model = XGBoost(val_share=0.2, n_rounds=10, lambda_=0,
+                        additional_booster_params={"params": {"max_depth": 4, "subsample": 0.7,
+                                                              "colsample_bytree": 0.7}})
+        probs_xgb.append(cv.run(data=df, label=label, model=model, preprocessors=[ReSampler("down")]))
 
         preds = [1 if p > 0.5 else 0 for p in probs_xgb[i]]
         print("F1, Baseline: {}, Xgboost: {}".format(get_f1_score(np.random.choice([0, 1], size=len(label)), label),

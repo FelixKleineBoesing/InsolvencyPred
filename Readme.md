@@ -11,7 +11,7 @@ pip3 install -r reqirements.txt
 jupyter notebook
 ```
 
-Now but the raw data inside the directory data/raw_data. If it doesn´t exist, you should create the dir.
+Now put the raw data inside the directory data/raw_data. If it doesn´t exist, you should create the dir.
 
 ### Introduction
 
