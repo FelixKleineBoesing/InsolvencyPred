@@ -6,8 +6,6 @@ import xgboost as xgb
 from sklearn.linear_model import LogisticRegression as LR
 from typing import Union, List
 
-from src.preprocessing import Preprocessor
-
 
 class Model(abc.ABC):
 
@@ -28,7 +26,7 @@ class Model(abc.ABC):
         pass
 
 
-class XGBoostModel(Model):
+class XGBoost(Model):
 
     def __init__(self, n_rounds: int = 10, eta: float = 0.3, lambda_: float = 0,
                  additional_booster_params: dict = None, val_share: float = 0.0):
@@ -75,12 +73,14 @@ class XGBoostModel(Model):
 
 class LogisticRegression(Model):
 
-    def __init__(self, random_state: int = 0, penalty: str = "l2",max_iter: int = 100):
+    def __init__(self, random_state: int = 0, penalty: str = "l2", max_iter: int = 100):
         assert penalty in ["l2", "l1"]
         self._model = LR(random_state=random_state, penalty=penalty, max_iter=max_iter)
         super().__init__()
 
     def train(self, train_data: pd.DataFrame, label: Union[list, pd.Series]):
+        nas = np.sum(~np.isfinite(train_data), axis=0)
+        assert np.sum(nas) == 0, "There are nas in the following columns: {}".format(nas[nas > 0])
         self._model.fit(train_data, label)
 
     def _predict(self, test_data: pd.DataFrame):
@@ -93,7 +93,7 @@ class CrossValidation:
         self.folds = folds
 
     def run(self, data: pd.DataFrame, label: Union[pd.Series, list], model: Model,
-            preprocessors: List[Preprocessor] = None):
+            preprocessors: List['Preprocessor'] = None):
         """
 
         :param data:
@@ -109,9 +109,9 @@ class CrossValidation:
 
         predictions = np.array([np.NaN for _ in range(len(indices))])
         for i in range(self.folds):
-            train_data, test_data = data.iloc[~data.index.isin(test_indices[i]), :], data.iloc[test_indices[i], :]
-            train_label, test_label = [v for i, v in enumerate(label) if i not in test_indices[i]], \
-                                      [v for i, v in enumerate(label) if i in test_indices[i]]
+            train_data, test_data = data.loc[~data.index.isin(test_indices[i]), :], data.iloc[test_indices[i], :]
+            train_label, test_label = [v for j, v in enumerate(label) if j not in test_indices[i]], \
+                                      [v for j, v in enumerate(label) if j in test_indices[i]]
             if preprocessors is not None:
                 for preprocessor in preprocessors:
                     train_data, test_data = preprocessor.process(train_data=train_data, test_data=test_data,
@@ -122,7 +122,7 @@ class CrossValidation:
 
 
 if __name__ == "__main__":
-    model = XGBoostModel()
+    model = XGBoost()
     data = pd.DataFrame({"a": [1, 2, 3], "b": [7, 5, 2]})
     label = [0, 1, 1]
     tdata = pd.DataFrame({"a": [4], "b": [1]})
@@ -136,3 +136,4 @@ if __name__ == "__main__":
     print(lr_model.predict(tdata))
 
     cv = CrossValidation(5).run(data, label, LogisticRegression(), preprocessors=None)
+
