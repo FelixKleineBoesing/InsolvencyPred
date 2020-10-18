@@ -3,13 +3,6 @@ import numpy as np
 import pandas as pd
 
 
-def replace_missing_values_mean(data: pd.DataFrame):
-    data = data.copy()
-    for col in data.columns:
-        data[col] = (data[col] - np.nanmean(data[col])) / np.nanstd(data[col])
-    return data
-
-
 def _sampling(data, method: str = "up"):
     """
 
@@ -40,14 +33,6 @@ def _sampling(data, method: str = "up"):
     return sampled_data
 
 
-def up_sampling(data):
-    return _sampling(data, "up")
-
-
-def down_sampling(data: pd.DataFrame):
-    return _sampling(data, "down")
-
-
 def remove_outliers(values, iqr_factor: float = 2.5):
     """
 
@@ -59,7 +44,7 @@ def remove_outliers(values, iqr_factor: float = 2.5):
     return [v for v in values if lq - iqr_factor * iqr < v < uq + iqr_factor * iqr]
 
 
-def clip_outliers(values, iqr_factor: float = 2.5):
+def clip_outliers(values: pd.DataFrame, iqr_factor: float = 2.5):
     """
     instead of removing it sets outlier to the lower and the upper bound that is defined by the 25th and 75th
     percent quantile subtracted/added by the iqr time a defined iqr_factor
@@ -68,11 +53,11 @@ def clip_outliers(values, iqr_factor: float = 2.5):
     :param iqr_factor:
     :return:
     """
-    lq, uq, iqr = _get_iqr(values)
-    values = np.array(values)
-    lower_bound, upper_bound = lq - iqr_factor * iqr, uq + iqr_factor * iqr
-    values[values < lower_bound] = lower_bound
-    values[values < upper_bound] = upper_bound
+    for col in values.columns:
+        lq, uq, iqr = _get_iqr(values[col])
+        lower_bound, upper_bound = lq - iqr_factor * iqr, uq + iqr_factor * iqr
+        values.loc[values[col] < lower_bound, col] = lower_bound
+        values.loc[values[col] > upper_bound, col] = upper_bound
     return values
 
 
@@ -85,7 +70,7 @@ def _get_iqr(values):
 class Preprocessor(abc.ABC):
 
     @abc.abstractmethod
-    def process(self, train_data, test_data, train_label) -> (pd.DataFrame, pd.DataFrame):
+    def process(self, train_data, test_data=None, train_label=None) -> (pd.DataFrame, pd.DataFrame):
         """
         This method may mutate the train and test data and return them afterwards
 
@@ -97,24 +82,35 @@ class Preprocessor(abc.ABC):
         pass
 
 
+class ReSampler(Preprocessor):
+
+    def __init__(self, method: str = "up"):
+        self.method = method
+
+    def process(self, train_data, test_data=None, train_label=None) -> (pd.DataFrame, pd.DataFrame):
+        return _sampling(train_data, self.method), test_data
+
+
 class MeanReplacement(Preprocessor):
 
-    def process(self, train_data, test_data, train_label) -> (pd.DataFrame, pd.DataFrame):
+    def process(self, train_data, test_data=None, train_label=None) -> (pd.DataFrame, pd.DataFrame):
         for col in train_data.columns:
-            mean_train = np.nanmean(train_data[col])
-            train_data.loc[train_data[col].isnull(), col] = mean_train
-            test_data.loc[test_data[col].isnull(), col] = mean_train
+            mean_train = np.nanmean(train_data.loc[np.isfinite(train_data[col]), col])
+            train_data.loc[~np.isfinite(train_data[col]), col] = mean_train
+            if test_data is not None:
+                test_data.loc[~np.isfinite(test_data[col]), col] = mean_train
         return train_data, test_data
 
 
 class Standardizer(Preprocessor):
 
-    def process(self, train_data, test_data, train_label) -> (pd.DataFrame, pd.DataFrame):
-        mean_train = np.nanmean(train_data, axis=1)
-        sd_train = np.nanstd(train_data, axis=1)
+    def process(self, train_data, test_data=None, train_label=None) -> (pd.DataFrame, pd.DataFrame):
+        mean_train = np.nanmean(train_data[np.isfinite(train_data)], axis=0)
+        sd_train = np.nanstd(train_data[np.isfinite(train_data)], axis=0)
 
         train_data = (train_data - mean_train) / sd_train
-        test_data = (test_data - mean_train) / sd_train
+        if test_data is not None:
+            test_data = (test_data - mean_train) / sd_train
         return train_data, test_data
 
 
@@ -125,6 +121,15 @@ if __name__ == "__main__":
     print(min(clipped_values))
     print(max(clipped_values))
 
-    data = pd.DataFrame({"class": [1, 1, 0, 1]})
+    data = pd.DataFrame({"class": [1, 1, 0, 1], "a": [1, 2, 3, 4]})
     upsampled_data = up_sampling(data)
     downsampled_data = down_sampling(data)
+
+    data_na = pd.DataFrame({"class": [1, 1, 0, 1, 0,0], "a": [1, 2, 3, 4, np.NaN, np.Inf]})
+    mean_replacer = MeanReplacement()
+    mean_replacer.process(data_na)
+
+    standardizer = Standardizer()
+    standardizer.process(data)
+
+
