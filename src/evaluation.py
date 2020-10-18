@@ -30,7 +30,7 @@ def get_recall(preds, actuals):
     preds = np.array(preds)
     actuals = np.array(actuals)
     dividend = (np.sum(np.logical_and(preds == 1, actuals == 1)) +
-                np.sum(np.logical_and(preds == 1, actuals == 0)))
+                np.sum(np.logical_and(preds == 0, actuals == 1)))
     if dividend == 0:
         return 0
     else:
@@ -41,7 +41,7 @@ def get_precision(preds, actuals):
     preds = np.array(preds)
     actuals = np.array(actuals)
     return np.sum(np.logical_and(preds == 1, actuals == 1)) / (np.sum(np.logical_and(preds == 1, actuals == 1)) +
-                                                               np.sum(np.logical_and(preds == 0, actuals == 1)))
+                                                               np.sum(np.logical_and(preds == 1, actuals == 0)))
 
 
 class EvaluationTracker:
