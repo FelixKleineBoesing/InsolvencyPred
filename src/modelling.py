@@ -40,8 +40,11 @@ class XGBoost(Model):
         super().__init__()
         self.val_share = val_share
         self.params = {"num_boost_round": n_rounds, "params":
-            {"eta": eta, "lambda": lambda_, "objective": "binary:logistic"}}
+            {"eta": eta, "lambda": lambda_, "objective": "binary:logistic", "eval_metric": "logloss"}}
         if additional_booster_params is not None:
+            if "params" in additional_booster_params:
+                self.params["params"].update(additional_booster_params["params"])
+            del additional_booster_params["params"]
             self.params.update(additional_booster_params)
 
     def train(self, train_data: pd.DataFrame, label: Union[list, pd.Series]):
@@ -49,15 +52,14 @@ class XGBoost(Model):
 
         :param train_data:
         :param label:
-        :param val_share:
         :return:
         """
         if self.val_share > 0.0:
             number_obs = train_data.shape[0]
-            val_indices = np.random.choice(np.arange(number_obs), int(self.val_share*number_obs))
+            val_indices = np.random.choice(np.arange(number_obs), int(self.val_share*number_obs), replace=False)
             val_matrix = xgb.DMatrix(data=train_data.iloc[val_indices, :],
                                      label=[v for i, v in enumerate(label) if i in val_indices])
-            train_matrix = xgb.DMatrix(data=train_data.iloc[~train_data.index.isin(val_indices), :],
+            train_matrix = xgb.DMatrix(data=train_data.iloc[[i for i in range(number_obs) if i not in val_indices], :],
                                        label=[v for i, v in enumerate(label) if i not in val_indices])
             eval_list = [(train_matrix, "train"), (val_matrix, "eval")]
         else:
@@ -114,8 +116,9 @@ class CrossValidation:
                                       [v for j, v in enumerate(label) if j in test_indices[i]]
             if preprocessors is not None:
                 for preprocessor in preprocessors:
-                    train_data, test_data = preprocessor.process(train_data=train_data, test_data=test_data,
-                                                                 train_label=train_label)
+                    train_data, test_data, train_label = preprocessor.process(train_data=train_data,
+                                                                              test_data=test_data,
+                                                                              train_label=train_label)
             model.train(train_data=train_data, label=train_label)
             predictions[test_indices[i]] = model.predict(test_data)
         return predictions
