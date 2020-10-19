@@ -31,10 +31,15 @@ def get_weighted_accuracy(preds, actuals, weight: float):
 
     :param preds:
     :param actuals:
-    :param weight: weight for the positive class
+    :param weight: weight for the positive class (cost for 1/cost for 0)
     :return:
     """
-    
+    return (np.sum(np.logical_and(preds == 1, actuals == 1)) * weight +
+            np.sum(np.logical_and(preds == 0, actuals == 0))) / (np.sum(actuals==1) * weight + np.sum(actuals==0))
+
+
+def get_threshold_for_optim_cost(probs, actuals, weight: float):
+    pass
 
 
 def get_recall(preds, actuals):
