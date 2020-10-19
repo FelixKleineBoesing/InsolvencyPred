@@ -26,6 +26,17 @@ def get_accuracy(preds, actuals):
     return np.sum(preds == actuals) / len(preds)
 
 
+def get_weighted_accuracy(preds, actuals, weight: float):
+    """
+
+    :param preds:
+    :param actuals:
+    :param weight: weight for the positive class
+    :return:
+    """
+    
+
+
 def get_recall(preds, actuals):
     preds = np.array(preds)
     actuals = np.array(actuals)
@@ -42,6 +53,18 @@ def get_precision(preds, actuals):
     actuals = np.array(actuals)
     return np.sum(np.logical_and(preds == 1, actuals == 1)) / (np.sum(np.logical_and(preds == 1, actuals == 1)) +
                                                                np.sum(np.logical_and(preds == 1, actuals == 0)))
+
+
+def get_all_measures(probs, actuals, threshold):
+    preds = [1 if v > threshold else 0 for v in probs]
+    measures = {
+        "auc": get_auc(probs, actuals),
+        "f1": get_f1_score(preds, actuals),
+        "acc": get_accuracy(preds, actuals),
+        "recall": get_recall(preds, actuals),
+        "precision": get_precision(preds, actuals)
+    }
+    return measures
 
 
 class EvaluationTracker:
