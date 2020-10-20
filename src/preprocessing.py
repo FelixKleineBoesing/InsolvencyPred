@@ -11,6 +11,7 @@ def _sampling(data, label, method: str = "up"):
     :param data:
     :return:
     """
+    pd.set_option('chained_assignment', None)
     assert method in ["up", "down"]
     data["class"] = label
     if method == "up":
