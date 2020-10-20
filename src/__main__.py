@@ -3,7 +3,8 @@ import numpy as np
 from cleaning import load_arff_files
 from modelling import LogisticRegression, XGBoost, CrossValidation
 from preprocessing import Standardizer, MeanReplacement, clip_outliers, ReSampler, CorrelationRemover, PCA
-from evaluation import get_f1_score, get_accuracy, get_auc, get_precision, get_recall, get_all_measures
+from evaluation import get_f1_score, get_accuracy, get_auc, get_precision, get_recall, get_all_measures, \
+    get_threshold_for_optim_cost
 from visualization import get_roc_curve
 
 
@@ -37,6 +38,12 @@ def main():
         print("Recall, Baseline: {}, LogisticRegression: {}".format(base_line_measures["recall"], measures["recall"]))
         print("Precision, Baseline: {}, LogisticRegression: {}".format(base_line_measures["precision"],
                                                                        measures["precision"]))
+
+        threshold, costs = get_threshold_for_optim_cost(probs, label, weight=5)
+        print(threshold)
+        print(costs)
+        print(get_all_measures(probs, label, threshold))
+
     get_roc_curve(probs_lr[i], label)
 
     for i, df in enumerate(dfs):
@@ -62,6 +69,11 @@ def main():
         print("Recall, Baseline: {}, XGBoost: {}".format(base_line_measures["recall"], measures["recall"]))
         print("Precision, Baseline: {}, XGBoost: {}".format(base_line_measures["precision"],
                                                                        measures["precision"]))
+        threshold, costs = get_threshold_for_optim_cost(probs, label, weight=5)
+        print(threshold)
+        print(costs)
+        print(get_all_measures(probs, label, threshold))
+
     get_roc_curve(probs_xgb[i], label)
 
 

@@ -29,7 +29,7 @@ class Model(abc.ABC):
 class XGBoost(Model):
 
     def __init__(self, n_rounds: int = 10, eta: float = 0.3, lambda_: float = 0,
-                 additional_booster_params: dict = None, val_share: float = 0.0):
+                 additional_booster_params: dict = None, val_share: float = 0.0, verbose: bool =False):
         """
 
         :param n_rounds:
@@ -39,6 +39,7 @@ class XGBoost(Model):
         """
         super().__init__()
         self.val_share = val_share
+        self.verbose = verbose
         self.params = {"num_boost_round": n_rounds, "params":
             {"eta": eta, "lambda": lambda_, "objective": "binary:logistic", "eval_metric": "logloss"}}
         if additional_booster_params is not None:
@@ -65,7 +66,7 @@ class XGBoost(Model):
         else:
             train_matrix = xgb.DMatrix(data=train_data, label=label)
             eval_list = [(train_matrix, "train")]
-        self._model = xgb.train(**self.params, dtrain=train_matrix, evals=eval_list)
+        self._model = xgb.train(**self.params, dtrain=train_matrix, evals=eval_list, verbose_eval=self.verbose)
 
     def _predict(self, test_data: pd.DataFrame):
         assert self._model is not None, "Model must be trained first!"
@@ -120,7 +121,7 @@ class CrossValidation:
                     train_data, test_data, train_label = preprocessor.process(train_data=train_data,
                                                                               test_data=test_data,
                                                                               train_label=train_label)
-            print("Label Distribution: Train: {}, Test: {}".format(np.mean(train_label), np.mean(test_label)))
+            #print("Label Distribution: Train: {}, Test: {}".format(np.mean(train_label), np.mean(test_label)))
             model.train(train_data=train_data, label=train_label)
             predictions[test_indices[i]] = model.predict(test_data)
         return predictions

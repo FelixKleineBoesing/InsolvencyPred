@@ -2,6 +2,7 @@ import numpy as np
 import json
 import os
 from sklearn.metrics import roc_auc_score
+from scipy.optimize import minimize
 
 
 def get_auc(probs, actuals):
@@ -34,12 +35,38 @@ def get_weighted_accuracy(preds, actuals, weight: float):
     :param weight: weight for the positive class (cost for 1/cost for 0)
     :return:
     """
+    preds = np.array(preds)
+    actuals = np.array(actuals)
     return (np.sum(np.logical_and(preds == 1, actuals == 1)) * weight +
             np.sum(np.logical_and(preds == 0, actuals == 0))) / (np.sum(actuals==1) * weight + np.sum(actuals==0))
 
 
-def get_threshold_for_optim_cost(probs, actuals, weight: float):
-    pass
+def get_threshold_for_optim_cost(probs, actuals, weight: float, steps: int = 500):
+    """
+
+    :param probs:
+    :param actuals:
+    :param weight: positive class cost  negative class cost
+    :return:
+    """
+    probs = np.array(probs)
+    actuals = np.array(actuals)
+
+    def optim_func(threshold):
+        preds = probs > float(threshold)
+        positive_cost = np.sum(np.logical_and(preds == 0, actuals == 1)) * weight
+        negative_cost = np.sum(np.logical_and(preds == 1, actuals == 0))
+        return negative_cost + positive_cost
+
+    # The function is a non continous function therefore its hard to optimize this one
+    # This is the very naive implementation. In Case of a larges size of observation this could take more time and
+    # should therefore be approximated with a polynomial function which can be optimized
+    costs = []
+    for i in range(steps):
+        cost = optim_func(i / steps)
+        costs.append(cost)
+
+    return np.argmin(costs) / steps, np.min(costs)
 
 
 def get_recall(preds, actuals):
@@ -107,3 +134,8 @@ class EvaluationTracker:
 
     def stop_tracking(self):
         pass
+
+
+if __name__ == "__main__":
+    print(get_weighted_accuracy([1, 0, 1, 0, 0, 1], actuals=[1, 0, 0, 0, 0, 1], weight=10))
+    print(get_threshold_for_optim_cost([0.8, 0, 0.7, 0, 0, 0.9], actuals=[1, 0, 0, 0, 0, 1], weight=10))
