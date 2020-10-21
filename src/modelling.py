@@ -1,4 +1,6 @@
 import abc
+import copy
+
 import pandas as pd
 import numpy as np
 import xgboost as xgb
@@ -38,6 +40,7 @@ class XGBoost(Model):
         :param additional_booster_params:
         """
         super().__init__()
+        additional_booster_params = copy.deepcopy(additional_booster_params)
         self.val_share = val_share
         self.verbose = verbose
         self.params = {"num_boost_round": n_rounds, "params":
@@ -55,6 +58,8 @@ class XGBoost(Model):
         :param label:
         :return:
         """
+        train_data = train_data.rename({col: "".join([c for c in col if c.isalnum()]) for col in train_data.columns},
+                                       axis=1)
         if self.val_share > 0.0:
             number_obs = train_data.shape[0]
             val_indices = np.random.choice(np.arange(number_obs), int(self.val_share*number_obs), replace=False)
@@ -70,6 +75,8 @@ class XGBoost(Model):
 
     def _predict(self, test_data: pd.DataFrame):
         assert self._model is not None, "Model must be trained first!"
+        test_data = test_data.rename({col: "".join([c for c in col if c.isalnum()]) for col in test_data.columns},
+                                     axis=1)
         test_matrix = xgb.DMatrix(data=test_data)
         return self._model.predict(test_matrix)
 
@@ -84,9 +91,12 @@ class LogisticRegression(Model):
     def train(self, train_data: pd.DataFrame, label: Union[list, pd.Series]):
         nas = np.sum(~np.isfinite(train_data), axis=0)
         assert np.sum(nas) == 0, "There are nas in the following columns: {}".format(nas[nas > 0])
+        train_data = train_data.rename({col: "".join([c for c in col if c.isalnum()]) for col in train_data.columns},
+                                       axis=1)
         self._model.fit(train_data, label)
 
     def _predict(self, test_data: pd.DataFrame):
+        test_data = test_data.rename({col: "".join([c for c in col if c.isalnum()]) for col in test_data.columns})
         return self._model.predict_proba(test_data)[:, 1]
 
 

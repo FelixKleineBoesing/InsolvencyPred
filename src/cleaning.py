@@ -35,7 +35,7 @@ def _get_column_name_mapping(file_path: str):
         for line in f.readlines():
             name_short, name_long = line.split("\t")
             name_long = name_long.replace("\n", "")
-            column_names[name_short] = "".join([c for c in name_long if c.isalnum()])
+            column_names[name_short] = name_long # "".join([c for c in name_long if c.isalnum()])
     column_names = {"Attr" + key[1:]: val for key, val in column_names.items()}
     return column_names
 
