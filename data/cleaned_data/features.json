@@ -1,0 +1,1 @@
+{"corr_selector": {"Year1": {"features": ["cashshorttermsecuritiesreceivablesshorttermliabilitiesoperatingexpensesdepreciation365", "salesinventory", "shorttermliabilitiestotalassets", "workingcapitaltotalassets", "longtermliabilitiesequity"], "auc": 0.6651007495865368}}, "greedy_selector": {}}
