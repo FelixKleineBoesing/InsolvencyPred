@@ -2,3 +2,6 @@
 data/
 src/.ipynb_checkpoints/
 *.pyc
+!data/cleaned_data/features.json
+!data/cleaned_data/recorded_measures_lr.json
+!data/cleaned_data/recorded_measures_xgb.json

@@ -99,43 +99,37 @@ def get_all_measures(probs, actuals, threshold):
     return measures
 
 
-class EvaluationTracker:
+def get_params_for_best_measure_overall(measure: str = "auc", path_to_measure_file: str = "../"):
+    with open(path_to_measure_file, "r") as f:
+        measures = json.load(f)
 
-    def __init__(self, file_store: str = "../data/eval.json"):
-        self.file_store = file_store
-        self._current_run = None
-        if os.path.exists(file_store):
-            with open(file_store, "r") as f:
-                self._track_cache = json.load(f)
-        else:
-            track_cache = {"runs": {},
-                           "last_run_id": {}}
-            with open(file_store, "w") as f:
-                json.dump(track_cache, f)
-            self._track_cache = track_cache
+    year_values = {}
+    for m in measures:
+        for key in m.keys():
+            if key in year_values:
+                if year_values[key][measure] < m[key][measure]:
+                    year_values[key] = m[key]
+            else:
+                year_values[key] = m[key]
 
-    def add_parameter(self, name: str, value):
-        pass
+    return year_values
 
-    def add_metric(self, name: str, value):
-        pass
 
-    def add_artifact(self):
-        pass
+def get_params_for_best_model(measure: str = "auc", target_year: int = 1, path_to_measure_file: str = "../"):
+    with open(path_to_measure_file, "r") as f:
+        measures = json.load(f)
 
-    def start_tracking(self, tracking_name: str):
-        if tracking_name in self._track_cache["runs"]:
-            tracking_id = self._track_cache["last_run_id"][tracking_name] + 1
-        else:
-            tracking_id = 0
-        self._current_run = (tracking_name, tracking_id)
-        self._track_cache[self._current_run] = {"params": {"name": [], "value": []},
-                                                "metric": {"name": [], "value": []}}
-
-    def stop_tracking(self):
-        pass
+    max_measure = None
+    index = None
+    for i, m in enumerate(measures):
+        if max_measure is not None:
+            if m["Year1"][measure] > max_measure:
+                max_measure = m["Year{}".format(target_year)]
+                index = i
+    return measures[index]
 
 
 if __name__ == "__main__":
     print(get_weighted_accuracy([1, 0, 1, 0, 0, 1], actuals=[1, 0, 0, 0, 0, 1], weight=10))
     print(get_threshold_for_optim_cost([0.8, 0, 0.7, 0, 0, 0.9], actuals=[1, 0, 0, 0, 0, 1], weight=10))
+    print(get_params_for_best_measure_overall("auc", "../data/cleaned_data/recorded_measures_xgb.json"))
