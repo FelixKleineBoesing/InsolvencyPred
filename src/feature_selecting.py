@@ -20,12 +20,6 @@ class FeatureSelector(abc.ABC):
         """
         pass
 
-    def get_selected_features(self):
-        pass
-
-    def get_search_trajectory(self):
-        pass
-
 
 class CorrelationSelector(FeatureSelector):
     """
@@ -62,7 +56,7 @@ class CorrelationSelector(FeatureSelector):
             else:
                 iterations_not_improved += 1
 
-            corr_data.drop(min_corr, axis=1)
+            corr_data.drop(min_corr, axis=1, inplace=True)
             chosen_columns.append(min_corr)
             frozen_measures.append(measure)
 
@@ -71,9 +65,10 @@ class CorrelationSelector(FeatureSelector):
             if iterations_not_improved >= early_stopping_iter:
                 converged = True
             i += 1
+            print(frozen_measures)
 
         col_index = int(np.argmax(frozen_measures))
-        return chosen_columns[:col_index], frozen_measures[col_index]
+        return chosen_columns[:col_index], frozen_measures[:col_index]
 
 
 class GreedyForwardSelector(FeatureSelector):
@@ -125,9 +120,10 @@ class GreedyForwardSelector(FeatureSelector):
             if iterations_not_improved >= early_stopping_iter:
                 converged = True
             i += 1
+            print(frozen_measures)
 
         col_index = int(np.argmax(frozen_measures))
-        return chosen_columns[:col_index], frozen_measures[col_index]
+        return chosen_columns[:col_index], frozen_measures[:col_index]
 
     @staticmethod
     def calculate_parallel(chosen_columns, remaining_columns, prediction_function, data, label, max_processes):
@@ -173,6 +169,3 @@ if __name__ == "__main__":
     def optim_func(data):
         return 1 / data.shape[1] + np.random.rand(1)
 
-    selector = GreedyForwardSelector()
-    features = selector.run_selection(pd.DataFrame({"a": [1, 2, 3]}), optim_func, 1)
-    print(features)
