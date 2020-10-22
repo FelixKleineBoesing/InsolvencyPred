@@ -25,8 +25,17 @@ class CorrelationSelector(FeatureSelector):
     """
     This FeatureSelector removes one feature in each run until the
     """
-    def __init__(self, squared: bool = False):
+    def __init__(self, squared: bool = True, direction: str = "min"):
+        """
+
+        :param squared: if true the correlations will be squared.
+            Therefore strong correlations will be chosen over weak correlations
+        :param direction: if max the columns will be chosen by the strongest and most correlations
+            otherwise they will be chosen by the weakest correlation
+        """
+        assert direction in ["max", "min"]
         self.squared = squared
+        self.direction = direction
 
     def run_selection(self, data: pd.DataFrame, label, prediction_function, early_stopping_iter: int = 5,
                       tolerance: float = 0.001, verbose: bool = True):
@@ -42,10 +51,15 @@ class CorrelationSelector(FeatureSelector):
             print("Run: {}".format(i))
             corrs = corr_data.corr()
             if self.squared:
-                corrs = np.sqrt(corrs)
+                corrs = np.power(corrs, 2)
+            else:
+                corrs = np.abs(corrs)
             sum_corrs = corrs.sum(axis=1)
-            min_corr = corrs.index[np.nanargmin(np.abs(sum_corrs))]
-            tmp = data[chosen_columns + [min_corr]]
+            if self.direction == "max":
+                corr = corrs.index[np.nanargmax(sum_corrs)]
+            else:
+                corr = corrs.index[np.nanargmin(sum_corrs)]
+            tmp = data[chosen_columns + [corr]]
             measure = prediction_function(tmp, label)
 
             if measure > max_measure:
@@ -56,8 +70,8 @@ class CorrelationSelector(FeatureSelector):
             else:
                 iterations_not_improved += 1
 
-            corr_data.drop(min_corr, axis=1, inplace=True)
-            chosen_columns.append(min_corr)
+            corr_data.drop(corr, axis=1, inplace=True)
+            chosen_columns.append(corr)
             frozen_measures.append(measure)
 
             if verbose:
@@ -100,7 +114,7 @@ class GreedyForwardSelector(FeatureSelector):
             print("Run: {}".format(i))
             if max_processes > 1:
                 measures = self.calculate_parallel(chosen_columns, remaining_columns, prediction_function, data, label,
-                                              max_processes)
+                                                   max_processes)
             else:
                 measures = self.calculate_sequential(chosen_columns, remaining_columns, prediction_function, data, label)
             col_index = int(np.argmax(measures))

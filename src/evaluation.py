@@ -1,8 +1,6 @@
 import numpy as np
 import json
-import os
 from sklearn.metrics import roc_auc_score
-from scipy.optimize import minimize
 
 
 def get_auc(probs, actuals):
@@ -122,14 +120,21 @@ def get_params_for_best_model(measure: str = "auc", target_year: int = 1, path_t
     max_measure = None
     index = None
     for i, m in enumerate(measures):
+        prefix = list(m.keys())[0].split()[0]
         if max_measure is not None:
-            if m["Year1"][measure] > max_measure:
-                max_measure = m["Year{}".format(target_year)]
+            if m["{} Year {}".format(prefix, target_year)][measure] > max_measure:
+                max_measure = m["{} Year {}".format(prefix, target_year)][measure]
                 index = i
+        else:
+            max_measure = m["{} Year {}".format(prefix, target_year)][measure]
+            index = 0
     return measures[index]
 
 
 if __name__ == "__main__":
     print(get_weighted_accuracy([1, 0, 1, 0, 0, 1], actuals=[1, 0, 0, 0, 0, 1], weight=10))
     print(get_threshold_for_optim_cost([0.8, 0, 0.7, 0, 0, 0.9], actuals=[1, 0, 0, 0, 0, 1], weight=10))
-    print(get_params_for_best_measure_overall("auc", "../data/cleaned_data/recorded_measures_xgb.json"))
+    params_xgb = get_params_for_best_measure_overall("auc", "../data/cleaned_data/recorded_measures_xgb.json")
+    params_lr = get_params_for_best_measure_overall("auc", "../data/cleaned_data/recorded_measures_lr.json")
+    params_model_xgb = get_params_for_best_model("auc", 1, "../data/cleaned_data/recorded_measures_xgb.json")
+    print(params_model_xgb)
