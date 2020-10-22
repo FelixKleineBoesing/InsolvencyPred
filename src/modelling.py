@@ -58,8 +58,10 @@ class XGBoost(Model):
         :param label:
         :return:
         """
-        train_data = train_data.rename({col: "".join([c for c in col if c.isalnum()]) for col in train_data.columns},
-                                       axis=1)
+        if isinstance(train_data.columns[0], str):
+            train_data = train_data.rename({col: "".join([c for c in col if c.isalnum()]) for col in train_data.columns},
+                                               axis=1)
+
         if self.val_share > 0.0:
             number_obs = train_data.shape[0]
             val_indices = np.random.choice(np.arange(number_obs), int(self.val_share*number_obs), replace=False)
@@ -75,7 +77,8 @@ class XGBoost(Model):
 
     def _predict(self, test_data: pd.DataFrame):
         assert self._model is not None, "Model must be trained first!"
-        test_data = test_data.rename({col: "".join([c for c in col if c.isalnum()]) for col in test_data.columns},
+        if isinstance(test_data.columns[0], str):
+            test_data = test_data.rename({col: "".join([c for c in col if c.isalnum()]) for col in test_data.columns},
                                      axis=1)
         test_matrix = xgb.DMatrix(data=test_data)
         return self._model.predict(test_matrix)
@@ -91,12 +94,14 @@ class LogisticRegression(Model):
     def train(self, train_data: pd.DataFrame, label: Union[list, pd.Series]):
         nas = np.sum(~np.isfinite(train_data), axis=0)
         assert np.sum(nas) == 0, "There are nas in the following columns: {}".format(nas[nas > 0])
-        train_data = train_data.rename({col: "".join([c for c in col if c.isalnum()]) for col in train_data.columns},
-                                       axis=1)
+        if isinstance(train_data.columns[0], str):
+            train_data = train_data.rename({col: "".join([c for c in col if c.isalnum()])
+                                            for col in train_data.columns}, axis=1)
         self._model.fit(train_data, label)
 
     def _predict(self, test_data: pd.DataFrame):
-        test_data = test_data.rename({col: "".join([c for c in col if c.isalnum()]) for col in test_data.columns})
+        if isinstance(test_data.columns[0], str):
+            test_data = test_data.rename({col: "".join([c for c in col if c.isalnum()]) for col in test_data.columns})
         return self._model.predict_proba(test_data)[:, 1]
 
 
