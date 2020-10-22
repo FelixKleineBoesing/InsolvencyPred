@@ -6,3 +6,5 @@ src/.ipynb_checkpoints/
 data/*
 !data/cleaned_data/
 
+~$
+docs/~$final_presentation.pptx
