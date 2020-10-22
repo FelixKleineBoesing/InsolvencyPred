@@ -13,18 +13,18 @@ def main_greedy(data, pred_function, early_stopping=5, tolerance=0.001, verbose=
     gfs = GreedyForwardSelector()
     label = data.pop("class")
     features, measures = gfs.run_selection(data=data, label=label, prediction_function=pred_function,
-                                          early_stopping_iter=early_stopping,
-                                          tolerance=tolerance, verbose=verbose, max_processes=max_processes)
+                                           early_stopping_iter=early_stopping,
+                                           tolerance=tolerance, verbose=verbose, max_processes=max_processes)
 
     return features, measures
 
 
-def main_corr(data, pred_function, early_stopping=5, tolerance=0.001, verbose=True):
-    gfs = CorrelationSelector()
+def main_corr(data, pred_function, early_stopping=5, tolerance=0.001, verbose=True, direction="min"):
+    gfs = CorrelationSelector(direction=direction)
     label = data.pop("class")
     features, measures = gfs.run_selection(data=data, label=label, prediction_function=pred_function,
-                                          early_stopping_iter=early_stopping,
-                                          tolerance=tolerance, verbose=verbose)
+                                           early_stopping_iter=early_stopping,
+                                           tolerance=tolerance, verbose=verbose)
 
     return features, measures
 
@@ -53,11 +53,27 @@ if __name__ == "__main__":
     if os.path.exists(features_path):
         with open(features_path, "r") as f:
             features = json.load(f)
+        if "corr_selector_max" not in features:
+            features["corr_selector_max"] = {}
+        if "corr_selector" not in features:
+            features["corr_selector"] = {}
+        if "greedy_selector" not in features:
+            features["greedy_selector"] = {}
     else:
-        features = {"corr_selector": {}, "greedy_selector": {}}
+        features = {"corr_selector": {}, "greedy_selector": {}, "corr_selector_max": {}}
 
     for i, df in enumerate(dfs):
-        corr_features, corr_measure = main_corr(data=df.copy(), pred_function=pred_function(cost_weight))
+        corr_features, corr_measure = main_corr(data=df.copy(), pred_function=pred_function(cost_weight),
+                                                early_stopping=5, direction="max")
+
+        features["corr_selector_max"]["Year{}".format(i + 1)] = {"features": corr_features, "auc": corr_measure}
+        with open(features_path, "w") as f:
+            json.dump(features, f)
+        print(corr_features)
+
+    for i, df in enumerate(dfs):
+        corr_features, corr_measure = main_corr(data=df.copy(), pred_function=pred_function(cost_weight),
+                                                early_stopping=10, direction="min")
 
         features["corr_selector"]["Year{}".format(i + 1)] = {"features": corr_features, "auc": corr_measure}
         with open(features_path, "w") as f:
@@ -65,6 +81,8 @@ if __name__ == "__main__":
         print(corr_features)
 
     for i, df in enumerate(dfs):
+        if "Year{}".format(i + 1) in features["greedy_selector"]:
+            continue
         features_greedy, greedy_measure = main_greedy(data=df.copy(), pred_function=pred_function(cost_weight))
         features["greedy_selector"]["Year{}".format(i + 1)] = {"features": features_greedy, "auc": greedy_measure}
 

@@ -43,6 +43,7 @@ def _sampling(data, label, method: str = "up"):
 
 def remove_outliers(values, iqr_factor: float = 2.5):
     """
+    removes outlier of an arraylike object which are larger/smaller than upper/lower quartil +/- iqr_factor * iqr
 
     :param values: list of values for which the outlier should be removed
     :param iqr_factor:
@@ -76,6 +77,9 @@ def _get_iqr(values):
 
 
 class Preprocessor(abc.ABC):
+    """
+    interface definition for use in the framework
+    """
 
     @abc.abstractmethod
     def process(self, train_data, test_data=None, train_label=None) -> (pd.DataFrame, pd.DataFrame,
@@ -92,17 +96,23 @@ class Preprocessor(abc.ABC):
 
 
 class PCA(Preprocessor):
+    """
+    Preprocessor that calculates the pca values of a given dataset and return the features that cover the
+    amount of variance that is covered in the constructor
+    """
 
     def __init__(self, variance_threshold: float = 0.95):
         self.variance_threshold = variance_threshold
+        self._pca_model = None
 
     def process(self, train_data, test_data=None, train_label=None) -> (pd.DataFrame, pd.DataFrame,
                                                                         Union[pd.Series, list]):
         pca = PCASK(n_components=self.variance_threshold)
         pca.fit(train_data)
         train_data = pd.DataFrame(pca.transform(train_data))
-        test_data = pd.DataFrame(pca.transform(test_data))
-
+        if test_data is not None:
+            test_data = pd.DataFrame(pca.transform(test_data))
+        self._pca_model = pca
         return train_data, test_data, train_label
 
 

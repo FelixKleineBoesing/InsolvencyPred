@@ -34,11 +34,12 @@ def main_lr(cost_weight=1, primary_measure: str = "Weighted Accuracy"):
         # this is to kick only to kick most extreme outlier
         df = clip_outliers(df.copy(), 5.5)
         model = LogisticRegression(max_iter=params["model"]["max_iter"])
+
         probs = cv.run(data=df, label=label, model=model,
                        preprocessors=params["preprocessors"])
-        probs_lr.append(probs) #
+        probs_lr.append(probs)
         measures = get_all_measures(probs, label, 0.5)
-
+        measures["importance"] = model._model.coef_.tolist()
         base_line_measures = get_all_measures(np.random.choice([0, 1], size=len(label)), label, 0.5)
         print("F1, Baseline: {}, LogisticRegression: {}".format(base_line_measures["f1"], measures["f1"]))
         print("Acc, Baseline: {}, LogisticRegression: {}".format(base_line_measures["acc"], measures["acc"]))
@@ -54,7 +55,7 @@ def main_lr(cost_weight=1, primary_measure: str = "Weighted Accuracy"):
         weighted_accuracy = get_weighted_accuracy([1 if p > threshold else 0 for p in probs], label, cost_weight)
         measures["Weighted Accuracy"] = weighted_accuracy
         measures["params"] = copy.deepcopy(params)
-        measures["params"]["preprocessors"] = [(p.__class__.__name__, p.__dict__) for p in params["preprocessors"]]
+        measures["params"]["preprocessors"] = [(p.__class__.__name__, str(p.__dict__)) for p in params["preprocessors"]]
         measures["probs"] = probs.tolist()
         measures["label"] = label.tolist()
         print("Weighted Accuracy, Baseline: {}, LogisticRegression: {}".format(
@@ -104,6 +105,7 @@ def main_xgb(cost_weight=1, primary_measure: str = "Weighted Accuracy"):
 
         measures = get_all_measures(probs, label, 0.5)
         base_line_measures = get_all_measures(np.random.choice([0, 1], size=len(label)), label, 0.5)
+        measures["importance"] = model._model.get_score(importance_type="gain")
 
         print("F1, Baseline: {}, XGBoost: {}".format(base_line_measures["f1"], measures["f1"]))
         print("Acc, Baseline: {}, XGBoost: {}".format(get_accuracy([1 for _ in range(len(label))], label),
@@ -145,5 +147,5 @@ def main_xgb(cost_weight=1, primary_measure: str = "Weighted Accuracy"):
 if __name__ == "__main__":
     pd.set_option('chained_assignment', None)
     cost_weight = 20
-    #main_lr(cost_weight=cost_weight)
-    main_xgb(cost_weight=cost_weight)
+    main_lr(cost_weight=cost_weight)
+    #main_xgb(cost_weight=cost_weight)

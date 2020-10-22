@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from typing import List
 
 
@@ -18,6 +19,15 @@ def get_class_dist_timeseries(labels: List[pd.Series]):
 
     stats["Year"] = ["Year {}".format(i) for i in range(1, len(labels) + 1)]
     return pd.DataFrame(stats)
+
+
+def create_all_paths():
+    if not os.path.exists("../data"):
+        os.mkdir("../data")
+    if not os.path.exists("../data/raw_data"):
+        os.mkdir("../data/raw_data")
+    if not os.path.exists("../data/cleaned_data"):
+        os.mkdir("../data/cleaned_data")
 
 
 if __name__ == "__main__":
